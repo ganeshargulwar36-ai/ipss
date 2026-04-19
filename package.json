@@ -1,0 +1,39 @@
+{
+  "name": "ipss-intelligent-production-scheduling",
+  "version": "1.0.0",
+  "description": "Intelligent Production Scheduling System — AI factory floor scheduler comparing FCFS, ML+SPT, EDD, and Round Robin algorithms with chaos simulation and ML prediction",
+  "main": "frontend/index.html",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
+  },
+  "keywords": [
+    "scheduling",
+    "machine-learning",
+    "random-forest",
+    "factory",
+    "simulation",
+    "production-planning",
+    "ai",
+    "optimization",
+    "gantt",
+    "javascript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "homepage": ".",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/ipss.git"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "mysql2": "^3.22.0"
+  }
+}

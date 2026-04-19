@@ -1,0 +1,11 @@
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); }
+body { font-family: var(--font-s); font-size: 13px; color: var(--text); transition: background .25s, color .25s; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+input, select, button, textarea { font-family: var(--font-s); }
+
+/* ── App ── */
+#app { display: flex; flex-direction: column; height: 100vh; }

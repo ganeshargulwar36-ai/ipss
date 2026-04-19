@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Intelligent Production Scheduling System</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+<!-- Chart.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+<!-- Project Styles -->
+<link rel="stylesheet" href="css/variables.css"/>
+<link rel="stylesheet" href="css/base.css"/>
+<link rel="stylesheet" href="css/layout.css"/>
+<link rel="stylesheet" href="css/components.css"/>
+<link rel="stylesheet" href="css/charts.css"/>
+<link rel="stylesheet" href="css/overlays.css"/>
+<link rel="stylesheet" href="css/misc.css"/>
+</head>
+<body>
+
+<!-- ── LOADING OVERLAY ── -->
+<div id="loading">
+  <div class="load-spin">⚙</div>
+  <div class="load-ttl">Running Simulation</div>
+  <div class="load-step" id="load-step">Initializing...</div>
+  <div class="load-bar"><div class="load-prog" id="load-prog"></div></div>
+</div>
+
+<!-- ── WELCOME MODAL ── -->
+<div class="modal-bd" id="welcome">
+  <div class="modal">
+    <div class="modal-title">Welcome to IPSS 🏭</div>
+    <div class="modal-sub">The Intelligent Production Scheduling System — a factory floor simulator that proves AI scheduling beats traditional methods using 4 algorithms, real chaos events, and ML prediction.</div>
+    <div class="modal-grid">
+      <div class="mc"><div class="mc-ico">🎲</div><div class="mc-ttl">1. Choose Input Mode</div><div class="mc-txt">Use <strong>Random</strong> to auto-generate jobs, or <strong>Manual</strong> to enter specific jobs with your own weights, complexity, and priorities.</div></div>
+      <div class="mc"><div class="mc-ico">🤖</div><div class="mc-ttl">2. Pick Algorithms</div><div class="mc-txt">Select which of the 4 scheduling algorithms to compare. All selected ones run simultaneously on the same jobs so you can compare results fairly.</div></div>
+      <div class="mc"><div class="mc-ico">⚡</div><div class="mc-ttl">3. Enable Chaos (Optional)</div><div class="mc-txt">Toggle Chaos Mode to simulate machine breakdowns, material shortages, or power outages. All algorithms face identical disruptions.</div></div>
+      <div class="mc"><div class="mc-ico">▶</div><div class="mc-ttl">4. Run &amp; Explore</div><div class="mc-txt">Click <strong>Run Simulation</strong>. Explore 7 tabs: Overview, Gantt Chart, Analytics, History, Job Schedule, Chaos Events, and the Feature Guide.</div></div>
+      <div class="mc"><div class="mc-ico">❓</div><div class="mc-ttl">Help Buttons (?) Everywhere</div><div class="mc-txt">Every sidebar control has a <strong>?</strong> button. Click it to see exactly what that control does, what problem it solves, and how it helps.</div></div>
+      <div class="mc"><div class="mc-ico">💡</div><div class="mc-ttl">Feature Guide Tab</div><div class="mc-txt">The last tab (💡 Guide) explains every feature in plain language with a clear <strong>Problem</strong> and <strong>Solution</strong> for each one.</div></div>
+    </div>
+    <button class="modal-cta" onclick="closeWelcome()">🚀 Let's Start</button>
+    <button class="modal-skip" onclick="closeWelcome()">Skip intro</button>
+  </div>
+</div>
+
+<!-- ── TOOLTIP ── -->
+<div class="tt-overlay" id="tt-ov" style="display:none" onclick="closeTip()">
+  <div class="tt-box" id="tt-box">
+    <button class="tt-close" onclick="closeTip()">✕</button>
+    <div class="tt-title" id="tt-title"></div>
+    <div class="tt-body"  id="tt-body"></div>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- ══ TOPBAR ══ -->
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-box">🏭</div>
+      <div>
+        <div class="logo-name">Intelligent Production Scheduling</div>
+        <div class="logo-sub">IPSS — AI Factory Optimizer</div>
+      </div>
+    </div>
+    <div class="tb-mid">
+      <span class="tb-tag" style="color:var(--yellow);border-color:var(--yellow);background:var(--yellow-dim)">FCFS</span>
+      <span class="tb-tag" style="color:var(--blue-l);border-color:var(--blue);background:var(--blue-dim)">ML+SPT — AI</span>
+      <span class="tb-tag" style="color:var(--green-l);border-color:var(--green);background:var(--green-dim)">EDD</span>
+      <span class="tb-tag" style="color:var(--purple);border-color:var(--purple);background:var(--purple-dim)">Round Robin</span>
+    </div>
+    <div class="tb-right">
+      <div class="live-wrap" id="live-wrap"><div class="live-dot"></div>LIVE</div>
+      <span class="tb-tag" id="chaos-badge" style="color:var(--red-l);border-color:var(--red);background:var(--red-dim);display:none">⚡ CHAOS</span>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle dark / light mode">🌙</button>
+      <button class="guide-btn" onclick="openWelcome()" title="Open user guide">?</button>
+    </div>
+  </div>
+
+  <!-- ══ BODY ══ -->
+  <div class="body">
+
+    <!-- ══ SIDEBAR ══ -->
+    <div class="sb">
+
+      <!-- Input Mode -->
+      <div class="sb-sec">
+        <div class="sb-hdr" onclick="togSec(this)">
+          <div class="sb-hdr-lbl"><span class="sb-hdr-ico">📥</span>Input Mode</div>
+          <span class="sb-arr open">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="mbtns">
+            <button class="mbtn on" id="btn-rand" onclick="setMode('random')">🎲 Random</button>
+            <button class="mbtn"    id="btn-man"  onclick="setMode('manual')">✏ Manual</button>
+          </div>
+          <div id="rand-cfg" style="display:flex;flex-direction:column;gap:10px">
+            <div class="field">
+              <div class="field-lbl">Machines (blank = auto)
+                <span class="htip" onclick="tip('machines',event)">?</span>
+              </div>
+              <input type="number" id="nm" min="1" max="30" placeholder="auto  3 – 12">
+            </div>
+            <div class="field">
+              <div class="field-lbl">Jobs (blank = auto)
+                <span class="htip" onclick="tip('jobs',event)">?</span>
+              </div>
+              <input type="number" id="nj" min="1" max="200" placeholder="auto  20 – 50">
+            </div>
+          </div>
+          <div id="man-cfg" style="display:none">
+            <div style="font-size:9px;color:var(--text3);margin-bottom:6px">Weight &amp; Complexity: 1–10 &nbsp;|&nbsp; Priority: 🔴🟡🟢
+              <span class="htip" style="margin-left:4px" onclick="tip('manual',event)">?</span>
+            </div>
+            <div id="mrows"></div>
+            <button class="add-btn" onclick="addRow()">+ Add job</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Job Settings -->
+      <div class="sb-sec">
+        <div class="sb-hdr" onclick="togSec(this)">
+          <div class="sb-hdr-lbl"><span class="sb-hdr-ico">⚙</span>Job Settings</div>
+          <span class="sb-arr open">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="field">
+            <div class="field-lbl">Default Priority
+              <span class="htip" onclick="tip('priority',event)">?</span>
+            </div>
+            <select id="def-prio">
+              <option value="normal" selected>🟡 Normal</option>
+              <option value="urgent">🔴 Urgent</option>
+              <option value="low">🟢 Low</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="field-lbl">Rework chance (QC failures)
+              <span class="htip" onclick="tip('rework',event)">?</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="rework-sl" min="0" max="30" value="8" step="1"
+                oninput="document.getElementById('rv').textContent=this.value+'%'">
+              <span class="range-num" id="rv">8%</span>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-lbl">Machine warm-up time
+              <span class="htip" onclick="tip('warmup',event)">?</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="warmup-sl" min="0" max="5" value="0.5" step="0.5"
+                oninput="document.getElementById('wv').textContent=this.value+'m'">
+              <span class="range-num" id="wv">0.5m</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Algorithms -->
+      <div class="sb-sec">
+        <div class="sb-hdr" onclick="togSec(this)">
+          <div class="sb-hdr-lbl"><span class="sb-hdr-ico">🤖</span>Algorithms
+            <span class="htip" onclick="tip('algorithms',event)">?</span>
+          </div>
+          <span class="sb-arr open">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="agrid">
+            <div class="achk on-0" id="ac0" onclick="togAlgo(0)">
+              <div class="adot" style="background:var(--yellow)"></div>
+              <span class="aname" style="color:var(--yellow)">FCFS</span>
+            </div>
+            <div class="achk on-1" id="ac1" onclick="togAlgo(1)">
+              <div class="adot" style="background:var(--blue)"></div>
+              <span class="aname" style="color:var(--blue-l)">ML+SPT</span>
+            </div>
+            <div class="achk on-2" id="ac2" onclick="togAlgo(2)">
+              <div class="adot" style="background:var(--green)"></div>
+              <span class="aname" style="color:var(--green-l)">EDD</span>
+            </div>
+            <div class="achk on-3" id="ac3" onclick="togAlgo(3)">
+              <div class="adot" style="background:var(--purple)"></div>
+              <span class="aname" style="color:var(--purple)">Round Robin</span>
+            </div>
+          </div>
+          <div style="font-size:9px;color:var(--text3)">All selected run simultaneously for comparison</div>
+        </div>
+      </div>
+
+      <!-- Chaos Mode -->
+      <div class="sb-sec">
+        <div class="sb-hdr" onclick="togSec(this)">
+          <div class="sb-hdr-lbl"><span class="sb-hdr-ico">⚡</span>Chaos Mode
+            <span class="htip" onclick="tip('chaos',event)">?</span>
+          </div>
+          <span class="sb-arr open">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="chaos-wrap" id="chaos-wrap" onclick="togChaos()">
+            <div class="chaos-top">
+              <div>
+                <div class="chaos-title" id="chaos-lbl">Simulate disruptions</div>
+                <div class="chaos-hint">Machine failures · shortages · outages</div>
+              </div>
+              <div class="sw" id="sw"><div class="swk" id="swk"></div></div>
+            </div>
+            <div class="chaos-opts" id="chaos-opts" onclick="event.stopPropagation()">
+              <label class="chk-row"><input type="checkbox" id="ch-machine" checked> 🔧 Machine breakdowns</label>
+              <label class="chk-row"><input type="checkbox" id="ch-material"> 📦 Material shortages</label>
+              <label class="chk-row"><input type="checkbox" id="ch-power"> ⚡ Power outages</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Run Button -->
+      <div class="run-wrap">
+        <button class="run-btn" id="run-btn" onclick="runSim()">▶ Run Simulation</button>
+        <div class="err-msg" id="err-msg"></div>
+      </div>
+
+      <!-- ML Model Info (shown after first run) -->
+      <div class="sb-sec" id="model-sec" style="display:none">
+        <div class="sb-hdr" onclick="togSec(this)">
+          <div class="sb-hdr-lbl"><span class="sb-hdr-ico">🧠</span>ML Model</div>
+          <span class="sb-arr open">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="model-card">
+            <div class="mct">Random Forest Regressor</div>
+            <div>R² Score &nbsp;<strong id="r2v">—</strong></div>
+            <div>MAE &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong id="maev">—</strong></div>
+            <div>Trees &nbsp;&nbsp;&nbsp;&nbsp;<strong>150 estimators</strong></div>
+            <div>Features &nbsp;<strong>weight, complexity</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export (shown after first run) -->
+      <div class="sb-sec" id="exp-sec" style="display:none">
+        <div class="sb-hdr" onclick="togSec(this)">
+          <div class="sb-hdr-lbl"><span class="sb-hdr-ico">📤</span>Export Results</div>
+          <span class="sb-arr open">▾</span>
+        </div>
+        <div class="sb-body">
+          <div class="exp-row">
+            <button class="exp-btn" onclick="doCSV()">📊 CSV</button>
+            <button class="exp-btn" onclick="doTxt()">📄 Report</button>
+            <button class="exp-btn" onclick="doJSON()">{ } JSON</button>
+          </div>
+          <div class="exp-row" style="margin-top:8px">
+            <button class="exp-btn" style="width:100%;background:rgba(34,197,94,.12);border-color:var(--green);color:var(--green-l)"
+              onclick="window.open('/api/history/export','_blank')">
+              📥 Download History Excel
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /sb -->
+
+    <!-- ══ MAIN CONTENT ══ -->
+    <main>
+      <div class="tabs">
+        <button class="tab-btn on" onclick="showTab('overview')">📊 Overview</button>
+        <button class="tab-btn"    onclick="showTab('gantt')">📅 Gantt</button>
+        <button class="tab-btn"    onclick="showTab('charts')">📈 Analytics</button>
+        <button class="tab-btn"    onclick="showTab('history')">📜 History</button>
+        <button class="tab-btn"    onclick="showTab('jobs')">📋 Jobs</button>
+        <button class="tab-btn"    onclick="showTab('chaos')">⚡ Chaos</button>
+        <button class="tab-btn"    onclick="showTab('explain')" style="color:var(--green-l)">💡 Feature Guide</button>
+      </div>
+
+      <div class="pane" id="pane">
+
+        <!-- Empty state -->
+        <div class="empty" id="empty">
+          <div class="empty-ico">🏭</div>
+          <div class="empty-title">Ready to simulate</div>
+          <div class="empty-sub">Configure your factory in the sidebar, then click Run Simulation to compare AI scheduling against traditional methods.</div>
+          <div class="empty-tip">
+            <strong>Quick start:</strong><br>
+            1. Leave all settings on default<br>
+            2. Click ▶ Run Simulation<br>
+            3. Explore each tab for results<br>
+            4. Click any <strong>?</strong> button for explanations<br>
+            5. See the <strong>💡 Feature Guide</strong> tab for full details
+          </div>
+        </div>
+
+        <!-- Results (hidden until first run) -->
+        <div id="result" style="display:none">
+
+          <!-- OVERVIEW TAB -->
+          <div id="tab-overview">
+            <div class="hero">
+              <div class="hero-grid">
+                <div>
+                  <div class="hero-lbl">Best AI improvement vs FCFS</div>
+                  <div class="hero-pct" id="h-pct">—</div>
+                  <div class="hero-sub" id="h-sub">—</div>
+                </div>
+                <div class="hero-stats" id="h-stats"></div>
+              </div>
+            </div>
+            <div id="ps-main"></div>
+            <div class="algo-strip" id="algo-strip"></div>
+            <div class="kpi-grid" id="kpi-grid"></div>
+            <div class="cc">
+              <div class="cc-ttl">Wait time &amp; makespan — all algorithms (minutes)
+                <span class="cc-hint">Lower = better scheduling</span>
+              </div>
+              <div class="lgnd" id="lg-main"></div>
+              <div style="position:relative;height:220px"><canvas id="bar-main"></canvas></div>
+            </div>
+          </div>
+
+          <!-- GANTT TAB -->
+          <div id="tab-gantt" style="display:none">
+            <div class="cc">
+              <div class="cc-ttl">Gantt chart — job assignment timeline</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.8">
+                Row = machine &nbsp;·&nbsp; Block = job &nbsp;·&nbsp; Block width = processing time &nbsp;·&nbsp; Gap = idle time (wasted capacity)<br>
+                <span style="color:var(--red)">■</span> Urgent &nbsp;
+                <span style="color:var(--yellow)">■</span> Normal &nbsp;
+                <span style="color:var(--green)">■</span> Low priority
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+                <label style="font-size:11px;color:var(--text2);font-weight:600">Algorithm:</label>
+                <select id="gantt-sel" onchange="drawGantt()"
+                  style="padding:5px 9px;border:1px solid var(--border);border-radius:5px;
+                         background:var(--bg3);color:var(--text);font-size:11px;outline:none;cursor:pointer">
+                </select>
+              </div>
+              <canvas id="gantt-canvas"></canvas>
+            </div>
+          </div>
+
+          <!-- ANALYTICS TAB -->
+          <div id="tab-charts" style="display:none">
+            <div class="c2">
+              <div class="cc" style="margin-bottom:0">
+                <div class="cc-ttl">Machine utilisation (%) <span class="cc-hint">Higher = better</span></div>
+                <div style="position:relative;height:200px"><canvas id="bar-util"></canvas></div>
+              </div>
+              <div class="cc" style="margin-bottom:0">
+                <div class="cc-ttl">Throughput (jobs/hr) <span class="cc-hint">Higher = better</span></div>
+                <div style="position:relative;height:200px"><canvas id="bar-thru"></canvas></div>
+              </div>
+            </div>
+            <div class="cc">
+              <div class="cc-ttl">Processing time distribution — queue order
+                <span class="cc-hint">ML+SPT line slopes upward (short jobs first)</span>
+              </div>
+              <div class="lgnd" id="lg-line"></div>
+              <div style="position:relative;height:200px"><canvas id="line-proc"></canvas></div>
+            </div>
+            <div class="cc">
+              <div class="cc-ttl">Wait time scatter — every job
+                <span class="cc-hint">Dots near zero = very little waiting</span>
+              </div>
+              <div class="lgnd" id="lg-scatter"></div>
+              <div style="position:relative;height:190px"><canvas id="sc-wait"></canvas></div>
+            </div>
+          </div>
+
+          <!-- HISTORY TAB -->
+          <div id="tab-history" style="display:none">
+            <div class="alert a-blue" style="margin-bottom:12px">Click any run card below to reload its full results and compare different configurations.</div>
+            <div class="hist-grid" id="hist-grid"></div>
+            <div class="cc">
+              <div class="cc-ttl">Improvement % trend over runs</div>
+              <div style="position:relative;height:190px"><canvas id="line-hist"></canvas></div>
+            </div>
+            <div class="cc">
+              <div class="cc-ttl">Avg wait time trend — all algorithms</div>
+              <div class="lgnd" id="lg-hist"></div>
+              <div style="position:relative;height:180px"><canvas id="line-hist2"></canvas></div>
+            </div>
+          </div>
+
+          <!-- JOBS TAB -->
+          <div id="tab-jobs" style="display:none">
+            <div class="alert a-blue" style="margin-bottom:12px">
+              Wait time colours:
+              <span style="color:var(--green-l);font-weight:600">Green</span> &lt; 5 min ·
+              <span style="color:var(--yellow-l);font-weight:600">Amber</span> 5–10 min ·
+              <span style="color:var(--red-l);font-weight:600">Red</span> &gt; 10 min
+            </div>
+            <div class="jgrid" id="jgrid"></div>
+          </div>
+
+          <!-- CHAOS TAB -->
+          <div id="tab-chaos" style="display:none">
+            <div id="chaos-content"></div>
+          </div>
+
+          <!-- FEATURE GUIDE TAB -->
+          <div id="tab-explain" style="display:none">
+            <div class="alert a-blue" style="margin-bottom:16px">
+              <strong>💡 Feature Guide</strong> — Every feature explained with the real problem it solves and how it fixes it.
+            </div>
+            <div class="ex-grid" id="ex-grid"></div>
+          </div>
+
+        </div><!-- /result -->
+      </div><!-- /pane -->
+
+      <!-- Status Bar -->
+      <div class="sbar" id="sbar">
+        <span class="sb-lbl">Machines:</span>
+        <div id="sbar-pills" style="display:flex;gap:4px;overflow:hidden;flex:1"></div>
+        <div class="sb-ts" id="sbar-ts"></div>
+      </div>
+    </main>
+
+  </div><!-- /body -->
+
+
+
+</div><!-- /app -->
+
+<!-- Project JavaScript -->
+<script src="js/constants.js"></script>
+<script src="js/state.js"></script>
+<script src="js/math.js"></script>
+<script src="js/simulation.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/run.js"></script>
+<script src="js/render.js"></script>
+<script src="js/export.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/api.js"></script>
+<script src="js/init.js"></script>
+
+</body>
+</html>

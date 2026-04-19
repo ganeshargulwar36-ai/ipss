@@ -1,0 +1,43 @@
+/* ── Misc ── */
+.spin-icon { display: inline-block; animation: spin 1s linear infinite; }
+@media (max-width:860px) { .sb{width:240px;min-width:240px} .c2,.jgrid{grid-template-columns:1fr} .modal-grid{grid-template-columns:1fr} }
+
+/* ── Neon Ticker Strip (reference-inspired, dark mode only) ── */
+.ticker-strip {
+  display: none;
+  flex-shrink: 0; height: 32px;
+  background: var(--blue); overflow: hidden;
+  align-items: center;
+}
+[data-theme="dark"] .ticker-strip { display: flex; }
+.ticker-inner {
+  display: flex; gap: 0; white-space: nowrap;
+  animation: ticker-scroll 28s linear infinite;
+}
+.ticker-item {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 0 28px;
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: #080808;
+  font-family: var(--font-d);
+}
+.ticker-sep { color: #080808; opacity: .5; }
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Dark mode: neon scrollbar ── */
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2a2a2a; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(200,240,0,.3); }
+
+/* ── Dark mode: table rows use true black ── */
+[data-theme="dark"] td { border-bottom: 1px solid rgba(200,240,0,.04); }
+[data-theme="dark"] tr:nth-child(even) td { background: rgba(200,240,0,.025); }
+[data-theme="dark"] th { background: #0d0d0d; border-bottom: 1px solid #1e1e1e; }
+
+/* ── Dark mode: tab active indicator uses lime ── */
+[data-theme="dark"] .tab-btn.on { color: var(--blue); border-bottom-color: var(--blue); text-shadow: 0 0 12px rgba(200,240,0,.4); }
+
+/* ── Dark mode: htip hover uses lime ── */
+[data-theme="dark"] .htip:hover { background: var(--blue); color: #080808; border-color: var(--blue); }
